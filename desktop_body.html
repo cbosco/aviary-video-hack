@@ -1,0 +1,100 @@
+<div>
+  Youtube HTML5
+</div>
+<span id="timer">TIME</span>
+<!-- controls - browser-implemented control bar -->
+<!-- preload - tells browser to not preload video on page load (performance/bandwidth) -->
+<div class="player">
+	<video
+		style="display: none;"
+		controls
+		height="360"
+		width="640"
+		poster="bunny.jpg"
+		preload="none">
+		<!-- you can add src to <video /> or to nested <source /> tags -->
+		<!-- <source /> has optional type attribute, but not well implemented in browsers -->
+		<!--  -->
+		<source src="bunny.mp4"></source><!-- iOS, IE9 -->
+		<source src="bunny.webm"></source><!-- Newer Firefox, Chrome, Opera -->
+		<source src="bunny.ogv"></source><!-- Older Firefox, Chrome, Opera -->
+	</video>
+</div>
+<div class="player">	
+	<video 
+		id="youtube"
+		controls  
+		x-webkit-airplay="allow" 
+		tabindex="0" 
+		data-youtube-id="JUs7iG1mNjI" 
+		poster="http://i3.ytimg.com/vi/JUs7iG1mNjI/hqdefault.jpg" 
+		src="http://o-o.preferred.iad09g01.v4.lscache1.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass%2Coc%3AU0hQRlhTVF9FSkNOMF9QTVhJ&amp;fexp=904427%2C910211&amp;itag=43&amp;ip=0.0.0.0&amp;signature=9193FD4FECD728AC19FD0B72876151895F5051FD.95666BE8C4CBD0411389944BE7323878280091EC&amp;sver=3&amp;ratebypass=yes&amp;expire=1311886800&amp;key=yt1&amp;ipbits=0&amp;id=254b3b886d663632">
+	</video>
+</div>
+<div class="player">
+	<video 
+		controls
+		id="youtube_join"
+		x-webkit-airplay="allow" 
+		tabindex="0"
+		height="360"
+		width="640"
+		data-youtube-id="JUs7iG1mNjI" 
+		poster="http://i3.ytimg.com/vi/JUs7iG1mNjI/hqdefault.jpg" 
+		src="http://o-o.preferred.iad09g01.v4.lscache1.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass%2Coc%3AU0hQRlhTVF9FSkNOMF9QTVhJ&amp;fexp=904427%2C910211&amp;itag=43&amp;ip=0.0.0.0&amp;signature=9193FD4FECD728AC19FD0B72876151895F5051FD.95666BE8C4CBD0411389944BE7323878280091EC&amp;sver=3&amp;ratebypass=yes&amp;expire=1311886800&amp;key=yt1&amp;ipbits=0&amp;id=254b3b886d663632">
+	</video>
+	
+</div>
+
+<!--
+	Bugs (bad HTML5 impl.):
+	
+	iOS3
+	----
+	poster attribute will BREAK the video.  Add it later dynamically.  UA sniffing :(
+	.mp4 source has to be first
+	
+	Android
+	-------
+	type attribute on mp4 source BREAKS video
+	Controls only full-screen.
+	You need to fire play() method programmatically on a HTML button or click of <video /> tag
+	(careful to remove this after and change to pause())
+	
+	Desktop
+	-------
+	Firefox will not degrade to Flash if there is no Firefox-compatible video file 
+	
+	
+	Javascript API:
+	
+	Buffering - you can see what has been buffered.
+	
+	Seek - you can seek to a point not yet downloaded
+		.currentTime (writable)
+		.duration
+		
+	Error handling
+	
+	Playback
+		.paused
+		.play()
+		.pause()
+		.playbackRate
+	
+	Other
+		.volume	(not on ipad/iphone)
+		.muted	(not on ipad/iphone)
+		
+		.networkState
+		.readyState
+		
+		
+	Server side:
+	
+	MIME types
+	----------
+	AddType video/ogg  .ogv
+	AddType video/mp4  .mp4
+	AddType video/webm .webm
+-->
