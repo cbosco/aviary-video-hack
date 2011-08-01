@@ -4,24 +4,9 @@
 <span id="timer">TIME</span>
 <!-- controls - browser-implemented control bar -->
 <!-- preload - tells browser to not preload video on page load (performance/bandwidth) -->
-<div class="player">
-	<video
-		style="display: none;"
-		controls
-		height="360"
-		width="640"
-		poster="bunny.jpg"
-		preload="none">
-		<!-- you can add src to <video /> or to nested <source /> tags -->
-		<!-- <source /> has optional type attribute, but not well implemented in browsers -->
-		<!--  -->
-		<source src="bunny.mp4"></source><!-- iOS, IE9 -->
-		<source src="bunny.webm"></source><!-- Newer Firefox, Chrome, Opera -->
-		<source src="bunny.ogv"></source><!-- Older Firefox, Chrome, Opera -->
-	</video>
-</div>
 <div class="player">	
 	<video 
+    style="display: none;"
 		id="youtube"
 		controls  
 		x-webkit-airplay="allow" 

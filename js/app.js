@@ -1,143 +1,145 @@
-/* Author: 
+(function(w) {
+  
+  w['AV'] = w['AV'] || {};  // global namespace
+  
+  
+  var MAX_FILE_SIZE = 52428800;  // 50MB in bytes
 
-*/
+  var form = null;
+  var inputImage = null;
+  
+  var getFile = function(element) {
+    var file;
+    try {
+      file = element.files[0];
+      if (!file) {
+        alert('Please choose a video file');
+      }
+    } catch(e) {
+      //  TODO - better legacy support?
+      alert('FileReader API unsupported.  Please try this with a mobile device with a Webkit browser, or if on the desktop, Google Chrome or Mozilla Firefox 4 or newer');
+      file = false;
+    }
+    return file;
+  };
+  
+  var validateFile = function(file) {
+    var fileSize = file.size || file.fileSize;
+  
+    var isVideo = (file.type.indexOf('video') > -1);
+    
+    if (!isVideo || fileSize > MAX_FILE_SIZE) {
+      var msg;
+      if (isVideo) {
+        msg = 'Please choose a file smaller than 2MB in size';
+      } else {
+        msg = 'Please choose an image file';
+      }
+      alert(msg);     
+      return false;
+    }
+    return true;
+  };
 
-function Segment (source, start, finish) {
-	this.source = source;
-	this.start = start;
-	this.finish = finish;
-	this.active = false;
-	return this;
-}
+  /*
+   * This will automatically multipart/form-data encode the file and send it to the server. The contents of the file is read in small chunks
+   * and thus doesn't use any significant amounts of memory.
+   *
+   * http://hacks.mozilla.org/2010/07/firefox-4-formdata-and-the-new-file-url-object/
+   * http://igstan.ro/posts/2009-01-11-ajax-file-upload-with-pure-javascript.html
+   */
+  var sendFile = function(url, file) {
+    var xhr = new XMLHttpRequest(); // or require's createXhr() if I care about IE
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.responseText.indexOf('{') > -1) {
+            var result = JSON.parse(xhr.responseText);
+            if (result && result.url) {
+              // cache-bust the filename because of problem with image onload event and cached images for webkit browsers
+              outputImage.src = result.url + '?bust=' + new Date().getMilliseconds();
+              outputImage.onload = stopSpin;
+              
+              // window.location.replace()
+              // save this as the last
+              lastPaper.imgsrc = result.url;
+              enableReplay();
+              setUrl(lastPaper);
+            }
+        } else {
+          alert(xhr.responseText);  // server error
+        }
 
+      }
+    };
 
-var sources = {
-	'What is the internet?' : 'http://o-o.preferred.iad09g01.v4.lscache1.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass%2Coc%3AU0hQRlhTVF9FSkNOMF9QTVhJ&amp;fexp=904427%2C910211&amp;itag=43&amp;ip=0.0.0.0&amp;signature=9193FD4FECD728AC19FD0B72876151895F5051FD.95666BE8C4CBD0411389944BE7323878280091EC&amp;sver=3&amp;ratebypass=yes&amp;expire=1311886800&amp;key=yt1&amp;ipbits=0&amp;id=254b3b886d663632',
-	'Iz eats cinnamon' : 'http://o-o.preferred.iad09g01.v22.lscache6.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass%2Coc%3AU0hQRlhUTl9FSkNOMF9QTlJF&amp;fexp=904427%2C910211&amp;itag=43&amp;ip=0.0.0.0&amp;signature=63C1D4C048C32E6ED8E58FADC4F5C453F2CAC016.CB848C90369CF52C12897D415D22BE0A79F78B37&amp;sver=3&amp;ratebypass=yes&amp;expire=1311890400&amp;key=yt1&amp;ipbits=0&amp;id=fc08416018b52246',
-	'Iz eats cinnamon (chrome)' : 'http://o-o.preferred.iad09g01.v22.lscache6.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass%2Coc%3AU0hQRlhUTl9FSkNOMF9QTlJF&amp;itag=43&amp;ip=0.0.0.0&amp;signature=05124C1D7192216503076E814A1FAB1B84F711A4.23B1DB0C393656E00215B252367AAD71EFC4C4C9&amp;sver=3&amp;ratebypass=yes&amp;expire=1311890400&amp;key=yt1&amp;ipbits=0&amp;id=fc08416018b52246',
-	'bunny' : 'bunny.webm',
-	'resident evil' : 'residentevil.webm'
-};
+    xhr.open('POST', url, true);      
+    try { // FormData \o/
+      var fd = new FormData();
+      fd.append("file", file);
+      fd.append('action', 'uploadFile');
+      //console.log(file);
+      xhr.send(fd);
+    } catch (e) {       // FormData unsupported :(
+      var boundary = 'AJAX-----------------------' + (new Date()).getTime();
+      var contentType = 'multipart/form-data; boundary=' + boundary;
+      xhr.setRequestHeader("Content-Type", contentType);
+ 
 
-var Video = (function() {
-	var timer = null;
-	
-	var keyFrames = null;
-	
-	var UPDATE_RATE_MS = 100;
-	var UPDATE_RATE_S = 0.1;
-	
-	var isPlaying = true;
-	
-	var update = function() {
-		if (isPlaying) {
-			currentTime += UPDATE_RATE_S;
-		}
-		
-		for (var i = 0; i < keyFrames.length; i++) {
-			var curKeyFrame = keyFrames[i];
-			if (!curKeyFrame.active && currentTime >= curKeyFrame.start) {
-				// switch to this video
-				console.log('switched to keyframe ' + i + ', src=' + curKeyFrame.segment.source);
-				if (currentSource != curKeyFrame.segment.source) {
-					isPlaying = false;
-					console.log('new src');
-					joinedVideo.pause();
-					joinedVideo.onloadeddata = function() {
-						console.log('callback');
-						joinedVideo.currentTime = curKeyFrame.segment.start;
-						console.log(joinedVideo.currentTime);
-						joinedVideo.play();
-						joinedVideo.onloadeddata = null;
-						isPlaying = true;
-					};
-					joinedVideo.src = curKeyFrame.segment.source;
-					joinedVideo.load();
-				} else {
-					console.log('same src');
-					// same source, just seek
-					joinedVideo.currentTime = curKeyFrame.segment.start;
-					console.log(joinedVideo.currentTime);
-				}
-				curKeyFrame.active = true;
-				currentSource = curKeyFrame.segment.source;
-				break;
-			} else {
-				continue;
-			}
-		}
-		// update UI
-		timerEl.innerHTML = ~~currentTime;
-		// stop at "end"
-		if (currentTime >= duration) {
-			joinedVideo.pause();
-			Video.stop();
-			currentTime = 0;
-		}
-	};
-	
-	return {
-		start: function() {
-			timer = window.setInterval(update, UPDATE_RATE_MS);
-		},
-		stop: function() {
-			window.clearTimeout(timer);
-		},
-		init: function(segments) {
-			keyFrames = [];
-			// segments is an array of segments
-			for (var i = 0; i < segments.length; i++) {
-				keyFrames.push({
-					start: duration,
-					segment: segments[i]
-				});
-				duration += (segments[i].finish - segments[i].start);	// running total time
-			}
-		}
-	};
+      var CRLF = "\r\n";
+      var type = inputImage.getAttribute("type").toUpperCase();
+      var fieldName = inputImage.name;
+      var fileName = file.fileName;
 
-})();
+      var part = "--" + boundary + CRLF;
 
+      /*
+       * Content-Disposition header contains name of the field
+       * used to upload the file and also the name of the file as
+       * it was on the user's computer.
+       */
+      part += 'Content-Disposition: form-data; ';
+      part += 'name="' + 'file' + '"; ';
+      part += 'filename="'+ fileName + '"' + CRLF;
 
-// useful because comparing src attribute directly will require regex
-var currentSource = null;
-var currentTime = 0;
-var duration = 0;
-var joinedVideo;
-var timerEl;
+      /*
+       * Content-Type header contains the mime-type of the file
+       * to send. Although we could build a map of mime-types
+       * that match certain file extensions, we'll take the easy
+       * approach and send a general binary header:
+       * application/octet-stream
+       */
+      part += "Content-Type: application/octet-stream";
+      part += CRLF + CRLF; // marks end of the headers part
 
-function playOrPause() {
-	if (this.paused) {
-		Video.start();
-		this.play();
-	} else {
-		this.pause();
-		Video.stop();
-	}
-}
+      /*
+       * File contents read as binary data, obviously
+       */
+      part += file.getAsBinary() + CRLF;
+      
+      part += "--" + boundary + "--" + CRLF;
+      // finally send the request as binary data
+      xhr.sendAsBinary(part);
+      
+    }
 
-window.onload = function() {
-	joinedVideo = document.getElementById('youtube_join');
-	timerEl = document.getElementById('timer');
-	
-	joinedVideo.onloadeddata = function() {
-	
-		Video.init([
-			new Segment(sources['bunny'], 0, 4),
-			new Segment(sources['resident evil'], 25, 27),
-			new Segment(sources['resident evil'], 12, 16),
-			new Segment(sources['bunny'], 0, 6),	// this is weird - bunny video does not load new content :(
-			new Segment(sources['resident evil'], 40, 42)
-		]);
-		
-	}
-	joinedVideo.src = sources['bunny'];
-	joinedVideo.load();
-	joinedVideo.onclick = playOrPause;
-	joinedVideo.poster = null;
-	
-};
+  };
 
+  window.onload = function() {
+    form = document.getElementById('uploadForm');
+    inputImage = document.getElementById('image');
+  
+    var existing = null;
+    
+    form.onsubmit = function(e) {
+      
+      var file = getFile(inputImage);
+      if (file && validateFile(file)) {
 
+        sendFile(this.action, file);
 
-
+      }
+      return false;
+    };
+  };
+  
+})(window);
