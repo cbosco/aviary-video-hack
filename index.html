@@ -25,6 +25,8 @@
 
   <!-- CSS: implied media="all" -->
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.14.custom.css">
+  
   <link rel="stylesheet" href="css/editor.css">
 	<!-- NOCACHE!! testing -->
 	<META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
@@ -49,11 +51,12 @@
             </label>
             <input id="image" type="file" />
             
-            <button type="submit" id="start" class="large magenta awesome">
+            <button type="submit" id="start">
                 Upload
             </button>
             
         </form>
+        <div id="video-sources"></div>
       </div>
       <div id="video-player">
         <video 
@@ -66,14 +69,55 @@
           width="320"
           src="b5.webm">
         </video>
+        <p style="text-align: center; padding: 20px;">
+          <button id="video-preview" style="width: 124px;">
+            Preview Video
+          </button>
+        </p>
         <div id="video-log">
-          HELLO
+          
         </div>
       </div>
     </div><!-- end #main -->
-    <div id="video-timeline">
-      hi
+    <div id="video-builder">
+      <div id="video-timeline">
+        <!--(canvases?)-->
+      </div>
+      <div id="video-segment-builder" style="display: none;">
+        <div class="panel">
+          <video 
+            id="video-segment-start"
+            x-webkit-airplay="allow" 
+            tabindex="0"
+            height="180"
+            width="320"
+            src="b5.webm">
+          </video>          
+        </div>
+        <div class="panel">
+          <div id="segment-slider"></div>
+          <!-- input type="range" fallback would be nicer, but jQuery can't do it -->
+          <button id="segment-confirm">Create Segment</button>
+        </div>
+        
+        <div class="panel">
+          <video 
+            id="video-segment-finish"
+            x-webkit-airplay="allow" 
+            tabindex="0"
+            height="180"
+            width="320"
+            src="b5.webm">
+          </video>
+        </div>
+      </div>
+      <div id="video-segments">
+        <!--<span class="segment">b5.avi [0s-5s]</span>
+        <span class="segment">b5.avi [5s-10s]</span>
+        <span class="segment">b5.avi [10s-15s]</span>-->
+      </div>
     </div>
+    
 
   <!-- JavaScript at the bottom for fast page loading -->
   

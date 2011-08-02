@@ -1,12 +1,98 @@
 (function(w) {
   
   w['AV'] = w['AV'] || {};  // global namespace
-  
+
+  AV.segmentBuilder = (function() {
+    var videoSegmentStart,
+        videoSegmentFinish,
+        slider,
+        confirmBtn,
+        curSource,
+        curStart,
+        curStop;
+        
+    function updateVideoPositions(ev, ui) {
+      videoSegmentStart.currentTime = curStart = ui.values[0];
+      videoSegmentFinish.currentTime = curStop = ui.values[1];
+      
+    }
+    
+    function updateUI() {
+      $(slider).slider({
+          range: true,
+          min: 0,
+          max: videoSegmentStart.duration,
+          values: [0, videoSegmentStart.duration],
+          slide: updateVideoPositions
+      });
+      $('#video-segment-builder').show();
+
+    }
+    
+    return {
+      init: function() {
+        videoSegmentStart = document.getElementById('video-segment-start');
+        videoSegmentFinish = document.getElementById('video-segment-finish');
+        slider = document.getElementById('segment-slider');
+        confirmBtn = document.getElementById('segment-confirm');
+        confirmBtn.onclick = this.confirm;
+      },
+      update: function(source){
+        curSource = source;
+        curStart = curStop = 0;
+                
+        // wait for video previews to load src
+        videoSegmentFinish.onloadeddata = function() {
+          updateUI();
+
+          this.onloadeddata = undefined;
+        };
+        
+        console.log(curSource.getAttribute('data-src'));
+        videoSegmentStart.src = curSource.getAttribute('data-src');
+        videoSegmentFinish.src = curSource.getAttribute('data-src');
+        
+
+      },
+      confirm: function() {
+        $(tray).slideUp();
+        // create element
+        var segment = $(
+          '<span class="segment">' + 
+            curSource.innerHTML + ' [' + curStart + 's - ' + curStop + 's]' +
+          '</span>'
+        );
+        // set data for json
+        segment.data({
+          id: curSource.getAttribute('data-id'),
+          src: curSource.getAttribute('data-src'),
+          start: curStart,
+          stop: curStop
+        });
+        // add it to sortable collection
+        $( "#video-segments" ).append(segment);
+        $( "#video-segments" ).refresh();
+      }
+    }
+  })();
   
   var MAX_FILE_SIZE = 52428800;  // 50MB in bytes
 
   var form = null;
   var inputImage = null;
+  
+  var generateNewSource = function(data) {
+    for (var i = 0; i < data.length; i++) {
+      var sourceFile = $(
+        '<span class="segment" data-id="' + data[i].id + '" data-src="' + data[i].url + '">' + data[i].originalName + '</span>'
+      );
+      sourceFile.draggable({
+        helper: 'clone'
+      });
+      $('#video-sources').append(sourceFile);
+    }
+
+  };
   
   var getFile = function(element) {
     var file;
@@ -50,23 +136,26 @@
    */
   var sendFile = function(url, file) {
     var xhr = new XMLHttpRequest(); // or require's createXhr() if I care about IE
+    // TODO: use XMLHttpRequest2
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {
         if (xhr.responseText.indexOf('{') > -1) {
             var result = JSON.parse(xhr.responseText);
-            if (result && result.url) {
-              // cache-bust the filename because of problem with image onload event and cached images for webkit browsers
-              outputImage.src = result.url + '?bust=' + new Date().getMilliseconds();
-              outputImage.onload = stopSpin;
+            if (result && result.videos) {
               
-              // window.location.replace()
-              // save this as the last
-              lastPaper.imgsrc = result.url;
-              enableReplay();
-              setUrl(lastPaper);
+              generateNewSource(result.videos);
+
+            } else { // FAKE IT
+              generateNewSource([
+                {
+                  id: Math.random(0,100000) + 'b5.webm',
+                  originalName: 'b5.avi',
+                  url: 'b5.webm'
+                }
+              ]);
             }
         } else {
-          alert(xhr.responseText);  // server error
+          //alert(xhr.responseText);  // server error
         }
 
       }
@@ -77,8 +166,17 @@
       var fd = new FormData();
       fd.append("file", file);
       fd.append('action', 'uploadFile');
-      //console.log(file);
+      //console.log(fd);
       xhr.send(fd);
+      return;
+      // fake...
+              generateNewSource([
+                {
+                  id: new Date() + 'b5.avi',
+                  originalName: 'b5.avi',
+                  url: 'b5.avi'
+                }
+              ]);
     } catch (e) {       // FormData unsupported :(
       var boundary = 'AJAX-----------------------' + (new Date()).getTime();
       var contentType = 'multipart/form-data; boundary=' + boundary;
@@ -140,6 +238,25 @@
       }
       return false;
     };
+    
+    AV.segmentBuilder.init();
+    
+    
+    $( "#video-segments" )
+      .sortable()
+      .disableSelection();
+  
+    
+    $('#video-builder').droppable({ // this = droppable
+      drop: function(ev, ui) {
+        AV.segmentBuilder.update(ui.draggable[0]);
+        
+        console.log(ui);
+        console.log('drop');
+        
+        
+      }
+    });
   };
   
 })(window);

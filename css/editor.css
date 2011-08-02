@@ -12,7 +12,7 @@ html, body {
 }
 
 #video-input-output,
-#video-timeline {
+#video-builder {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
   box-flex: 1;
@@ -44,7 +44,70 @@ html, body {
   width: 320px;
 }
 
-#video-timeline {
+#video-builder {
   height: 140px;
-  background: #000;
+}
+
+
+#video-segments {
+  width: 100%;
+  
+   display: -webkit-box;
+  -webkit-box-orient: horizontal;
+  display: -moz-box;
+  -moz-box-orient: horizontal;
+  display: box;
+  box-orient: horizontal;
+}
+
+.segment {
+  white-space: nowrap;
+  display: block;
+  text-align: center;
+  background: lightblue;
+  
+  -webkit-box-flex: 1;
+  -moz-box-flex: 1;
+  box-flex: 1;
+  
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+#video-input .segment {
+  float: left;
+  margin: 0 10px 10px 0;
+}
+
+#video-segment-builder {
+  width: 860px;
+  margin: 0 auto;
+  
+   display: -webkit-box;
+  -webkit-box-orient: horizontal;
+  display: -moz-box;
+  -moz-box-orient: horizontal;
+  display: box;
+  box-orient: horizontal;
+}
+
+#video-segment-builder .panel {
+  text-align: center;
+  
+  -webkit-box-flex: 1;
+  -moz-box-flex: 1;
+  box-flex: 1;
+}
+
+#segment-slider {
+  position: relative;
+  top: 96px;
+  margin: 0 auto;
+  width: 140px;
+}
+#segment-confirm {
+  position: relative;
+  top: 130px;
 }
